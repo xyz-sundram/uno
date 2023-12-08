@@ -5,6 +5,8 @@
 const int trigPin = 10;
 const int echoPin = 11;
 const int buzzerPin = 9; // Define the buzzer pin
+const int sensorLightPin = 8; // Define the pin for the sensor-activated light
+const int constantLightPin = 7; // Define the pin for the constantly lit light
 
 // Variables for the duration and the distance
 long duration;
@@ -12,12 +14,21 @@ int distance;
 
 Servo myServo; // Creates a servo object for controlling the servo motor
 
+bool isBlinking = false;
+unsigned long previousMillis = 0;
+const long interval = 500; // Blinking interval in milliseconds
+
 void setup() {
   pinMode(trigPin, OUTPUT); // Sets the trigPin as an Output
   pinMode(echoPin, INPUT); // Sets the echoPin as an Input
   pinMode(buzzerPin, OUTPUT); // Sets the buzzer pin as an Output
+  pinMode(sensorLightPin, OUTPUT); // Sets the sensor light pin as an Output
+  pinMode(constantLightPin, OUTPUT); // Sets the constant light pin as an Output
   Serial.begin(9600);
   myServo.attach(12); // Defines on which pin is the servo motor attached
+  
+  // Ensure the constant light is initially ON
+  digitalWrite(constantLightPin, HIGH);
 }
 
 void loop() {
@@ -35,8 +46,14 @@ void loop() {
     // Check if an object is detected within a certain range (adjust as needed)
     if (distance < 50 && distance > 0) {
       beepBuzzer(); // Activate the buzzer
+      digitalWrite(sensorLightPin, HIGH); // Turn on the sensor-activated light
+      digitalWrite(constantLightPin, LOW); // Turn off the constant light
+      startBlinking(); // Start blinking the sensor light
     } else {
       noTone(buzzerPin); // Turn off the buzzer if no object is detected within the specified range
+      digitalWrite(sensorLightPin, LOW); // Turn off the sensor-activated light
+      digitalWrite(constantLightPin, HIGH); // Turn on the constant light
+      stopBlinking(); // Stop blinking the sensor light
     }
   }
   
@@ -53,8 +70,14 @@ void loop() {
     // Check if an object is detected within a certain range (adjust as needed)
     if (distance < 50 && distance > 0) {
       beepBuzzer(); // Activate the buzzer
+      digitalWrite(sensorLightPin, HIGH); // Turn on the sensor-activated light
+      digitalWrite(constantLightPin, LOW); // Turn off the constant light
+      startBlinking(); // Start blinking the sensor light
     } else {
       noTone(buzzerPin); // Turn off the buzzer if no object is detected within the specified range
+      digitalWrite(sensorLightPin, LOW); // Turn off the sensor-activated light
+      digitalWrite(constantLightPin, HIGH); // Turn on the constant light
+      stopBlinking(); // Stop blinking the sensor light
     }
   }
 }
@@ -76,6 +99,34 @@ int calculateDistance() {
 
 // Function to make the buzzer beep
 void beepBuzzer() {
-  tone(buzzerPin, 2300); // You can change the frequency as needed
+  tone(buzzerPin, 1000); // You can change the frequency as needed
   delay(100); // Adjust the duration of the beep as needed
+}
+
+// Function to start blinking the sensor light
+void startBlinking() {
+  isBlinking = true;
+}
+
+// Function to stop blinking the sensor light
+void stopBlinking() {
+  isBlinking = false;
+  digitalWrite(sensorLightPin, LOW); // Ensure the light is turned off when blinking stops
+}
+
+void manageBlinking() {
+  unsigned long currentMillis = millis();
+
+  if (isBlinking) {
+    if (currentMillis - previousMillis >= interval) {
+      previousMillis = currentMillis;
+      
+      // Toggle the state of the sensor light
+      if (digitalRead(sensorLightPin) == HIGH) {
+        digitalWrite(sensorLightPin, LOW);
+      } else {
+        digitalWrite(sensorLightPin, HIGH);
+      }
+    }
+  }
 }
